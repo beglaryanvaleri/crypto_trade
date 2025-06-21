@@ -1,9 +1,8 @@
 """
 Binance Futures client implementation.
 """
-from typing import Dict, List, Optional, Tuple, Any
-import time
-from datetime import datetime, timedelta
+from typing import Dict, List, Optional
+from decimal import Decimal, ROUND_HALF_UP
 from binance import Client
 import requests
 
@@ -175,7 +174,7 @@ class BinanceFuturesInterface:
                 'side': side.upper(),
                 'type': 'LIMIT',
                 'quantity': quantity,
-                'price': str(price),
+                'price': price,
                 'timeInForce': time_in_force,
                 'reduceOnly': reduce_only
             }
@@ -287,6 +286,42 @@ class BinanceFuturesInterface:
             self.logger.error(f"Failed to set leverage: {e}")
             return False
             
+    def _get_symbol_info(self, symbol: str) -> Optional[Dict]:
+        """Get symbol information including tick size."""
+        try:
+            if not hasattr(self, '_symbol_info_cache'):
+                self._symbol_info_cache = {}
+                
+            if symbol not in self._symbol_info_cache:
+                exchange_info = self._client.futures_exchange_info()
+                for s in exchange_info['symbols']:
+                    if s['symbol'] == symbol:
+                        self._symbol_info_cache[symbol] = s
+                        break
+                        
+            return self._symbol_info_cache.get(symbol)
+        except Exception as e:
+            self.logger.error(f"Failed to get symbol info for {symbol}: {e}")
+            return None
+
+    def round_price_to_tick(self, symbol: str, price: float) -> float:
+        """Round price to correct tick size for symbol."""
+        symbol_info = self._get_symbol_info(symbol)
+        if not symbol_info:
+            # Fallback for common symbols
+            if 'USDT' in symbol:
+                return float(Decimal(str(price)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
+            return price
+
+        # Find tick size from price filter
+        for f in symbol_info['filters']:
+            if f['filterType'] == 'PRICE_FILTER':
+                tick_size = Decimal(str(f['tickSize']))
+                rounded = (Decimal(str(price)) / tick_size).quantize(0, rounding=ROUND_HALF_UP) * tick_size
+                return float(rounded)
+
+        return price
+
     def get_listen_key(self) -> Optional[str]:
         """Get listen key for websocket user data stream."""
         try:
