@@ -4,6 +4,7 @@ websockets>=12.0
 python-dotenv>=1.0.0
 pandas>=2.0.0
 numpy>=1.24.0
+PyYAML>=6.0
 
 # Binance exchange
 python-binance==1.0.27

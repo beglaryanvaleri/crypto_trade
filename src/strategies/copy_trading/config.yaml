@@ -1,0 +1,18 @@
+main_account:
+  api_key: $MAIN_API_KEY
+  api_secret: $MAIN_API_SECRET
+  testnet_api_key: $MAIN_TESTNET_API_KEY
+  testnet_api_secret: $MAIN_TESTNET_API_SECRET
+  mode: $MAIN_TRADING_MODE
+
+# Source accounts to copy trades from
+source_accounts:
+  - name: "SourceTrader1"
+    enabled: true
+    api_key: $SOURCE_1_API_KEY
+    api_secret: $SOURCE_1_API_SECRET
+    testnet_api_key: $SOURCE_1_TESTNET_API_KEY
+    testnet_api_secret: $SOURCE_1_TESTNET_API_SECRET
+    mode: $SOURCE_1_TRADING_MODE
+    coefficient: 1.0
+    reverse_trades: false
