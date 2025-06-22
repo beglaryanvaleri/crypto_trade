@@ -137,3 +137,10 @@ The strategy supports `$VARIABLE_NAME` syntax in `config.yaml` to reference envi
 2. **Monitor Closely**: Watch logs for any execution issues
 3. **Small Coefficients**: Start with small position sizes (0.1-0.5)
 4. **API Permissions**: Ensure API keys have futures trading permissions
+
+## 🚀 Future Improvements
+
+### Position Synchronization
+- **Goal**: Implement position matching to ensure main account mirrors source accounts' positions
+- **How**: Periodically check and compare positions between accounts, then adjust main account to match desired coefficient ratios
+- **Benefit**: Handles cases where trades are missed or when starting with existing positions
