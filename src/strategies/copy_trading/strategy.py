@@ -22,6 +22,9 @@ class CopyTradingStrategy:
         )
         
         self.source_interfaces = {}
+        self.source_configs = {}
+        self.executed_orders = {}  # Track executed orders by source
+        
         for source in yaml['source_accounts']:
             if not source.get('enabled', True):
                 continue
@@ -34,8 +37,50 @@ class CopyTradingStrategy:
                 mode=source['mode']
             )
             self.source_interfaces[source['name']] = interface
+            self.source_configs[source['name']] = source
+            self.executed_orders[source['name']] = []
         
         logger.info(f"Initialized copy trading strategy with {len(self.source_interfaces)} source accounts")
+    
+    def _create_message_handler(self, source_name):
+        def on_message(message):
+            if 'e' in message:
+                event_type = message['e']
+                
+                if event_type == 'ORDER_TRADE_UPDATE':
+                    # Order execution details
+                    order = message['o']
+                    symbol = order['s']
+                    side = order['S']
+                    order_status = order['X']
+                    executed_qty = float(order['z'])  # Cumulative filled quantity
+                    executed_price = float(order['ap'])  # Average price
+                    order_id = order['i']
+                    client_order_id = order['c']
+                    
+                    if order_status == 'FILLED' and executed_qty > 0:
+                        logger.info(f"[{source_name}] EXECUTION: {symbol} {side} {executed_qty} @ ${executed_price:,.2f}")
+                        
+                        # Store execution for future copying
+                        execution = {
+                            'timestamp': message['E'],
+                            'symbol': symbol,
+                            'side': side,
+                            'quantity': executed_qty,
+                            'price': executed_price,
+                            'order_id': order_id,
+                            'client_order_id': client_order_id
+                        }
+                        self.executed_orders[source_name].append(execution)
+                        
+                    elif order_status in ['PARTIALLY_FILLED', 'NEW', 'CANCELED', 'EXPIRED']:
+                        logger.info(f"[{source_name}] Order update: {symbol} {side} status={order_status}")
+                else:
+                    logger.info(f"[{source_name}] Received {event_type} message")
+            else:
+                logger.info(f"[{source_name}] Received message without event type")
+        
+        return on_message
     
     async def run(self):
         logger.info("Starting copy trading strategy...")
@@ -64,7 +109,8 @@ class CopyTradingStrategy:
         logger.info(f"Got listen key for {name}: {listen_key[:8]}...")
         
         ws_client = BinanceFuturesWebSocketClient(
-            mode=interface.testnet and "testnet" or "production",
+            mode=self.source_configs[name]['mode'],
+            on_message=self._create_message_handler(name),
             on_open=lambda: logger.info(f"Connected to {name} user data stream"),
             on_close=lambda: logger.info(f"Disconnected from {name} user data stream")
         )
