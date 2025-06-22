@@ -322,6 +322,24 @@ class BinanceFuturesInterface:
 
         return price
 
+    def round_quantity_to_lot(self, symbol: str, quantity: float) -> float:
+        """Round quantity to correct lot size for symbol."""
+        symbol_info = self._get_symbol_info(symbol)
+        if not symbol_info:
+            # Fallback for common symbols
+            if 'USDT' in symbol:
+                return float(Decimal(str(quantity)).quantize(Decimal('0.001'), rounding=ROUND_HALF_UP))
+            return quantity
+
+        # Find lot size from quantity filter
+        for f in symbol_info['filters']:
+            if f['filterType'] == 'LOT_SIZE':
+                step_size = Decimal(str(f['stepSize']))
+                rounded = (Decimal(str(quantity)) / step_size).quantize(0, rounding=ROUND_HALF_UP) * step_size
+                return float(rounded)
+
+        return quantity
+
     def get_listen_key(self) -> Optional[str]:
         """Get listen key for websocket user data stream."""
         try:

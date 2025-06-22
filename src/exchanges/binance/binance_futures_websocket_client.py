@@ -26,7 +26,7 @@ class BinanceFuturesWebSocketClient:
             self.testnet = False
             self.base_url = Config.binance_futures_base_url
             self.ws_url = Config.binance_futures_ws_url
-            self.logger.info("Using Binance PRODUCTION")
+            self.logger.info("Using Binance LIVE")
 
         # Connection management
         self.ws = None
