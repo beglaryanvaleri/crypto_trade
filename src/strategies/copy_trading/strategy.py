@@ -72,6 +72,7 @@ class CopyTradingStrategy:
                             'client_order_id': client_order_id
                         }
                         self.executed_orders[source_name].append(execution)
+                        asyncio.create_task(self._copy_trade(source_name, execution))
                         
                     elif order_status in ['PARTIALLY_FILLED', 'NEW', 'CANCELED', 'EXPIRED']:
                         logger.info(f"[{source_name}] Order update: {symbol} {side} status={order_status}")
@@ -82,6 +83,38 @@ class CopyTradingStrategy:
         
         return on_message
     
+    async def _copy_trade(self, source_name, execution):
+        try:
+            source_config = self.source_configs[source_name]
+            symbol = execution['symbol']
+            side = execution['side']
+            original_qty = execution['quantity']
+            price = execution['price']
+            
+            # Apply coefficient
+            coefficient = source_config.get('coefficient', 1.0)
+            calculated_qty = original_qty * coefficient
+            
+            # Round quantity to correct precision
+            rounded_qty = self.main_interface.round_quantity_to_lot(symbol, calculated_qty)
+            
+            # Apply reverse trading if enabled
+            if source_config.get('reverse_trades', False):
+                side = 'SELL' if side == 'BUY' else 'BUY'
+            
+            logger.info(f"[COPY] {source_name} -> MAIN: {symbol} {side} {original_qty} * {coefficient} = {calculated_qty} -> {rounded_qty}")
+            
+            # Execute market order on main account
+            result = self.main_interface.create_market_order(symbol, side, rounded_qty)
+            
+            if result:
+                logger.info(f"[COPY] SUCCESS: {result}")
+            else:
+                logger.error(f"[COPY] FAILED: Could not execute {symbol} {side} {rounded_qty}")
+                
+        except Exception as e:
+            logger.error(f"[COPY] ERROR: {e}")
+
     async def run(self):
         logger.info("Starting copy trading strategy...")
         
