@@ -75,12 +75,17 @@ class CopyTradingStrategy:
                         asyncio.create_task(self._copy_trade(source_name, execution))
                         
                     elif order_status in ['PARTIALLY_FILLED', 'NEW', 'CANCELED', 'EXPIRED']:
-                        logger.info(f"[{source_name}] Order update: {symbol} {side} status={order_status}")
+                        logger.info(f"[{source_name}] Order update: {symbol} {side} status={order_status}. Message: {message}")
                 else:
-                    logger.info(f"[{source_name}] Received {event_type} message")
+                    logger.info(f"[{source_name}] Received {event_type} message. Message: {message}")
             else:
-                logger.info(f"[{source_name}] Received message without event type")
+                logger.info(f"[{source_name}] Received message without event type. Message: {message}")
         
+        return on_message
+    
+    def _create_main_message_handler(self):
+        def on_message(message):
+            logger.info(f"[MAIN] {message}")
         return on_message
     
     async def _copy_trade(self, source_name, execution):
@@ -120,6 +125,12 @@ class CopyTradingStrategy:
         
         try:
             tasks = []
+            
+            # Add main account listener
+            main_task = asyncio.create_task(self._listen_main_account())
+            tasks.append(main_task)
+            
+            # Add source account listeners
             for name, interface in self.source_interfaces.items():
                 task = asyncio.create_task(self._listen_source_account(name, interface))
                 tasks.append(task)
@@ -130,6 +141,27 @@ class CopyTradingStrategy:
             logger.info("Copy trading strategy stopped by user")
         except Exception as e:
             logger.error(f"Error in copy trading strategy: {e}")
+    
+    async def _listen_main_account(self):
+        logger.info("Starting WebSocket listener for MAIN account")
+        
+        listen_key = self.main_interface.get_listen_key()
+        if not listen_key:
+            logger.error("Failed to get listen key for MAIN account")
+            return
+        
+        logger.info(f"Got listen key for MAIN: {listen_key[:8]}...")
+        
+        yaml = Config.yaml
+        ws_client = BinanceFuturesWebSocketClient(
+            mode=yaml['main_account']['mode'],
+            on_message=self._create_main_message_handler(),
+            on_open=lambda: logger.info("Connected to MAIN user data stream"),
+            on_close=lambda: logger.info("Disconnected from MAIN user data stream")
+        )
+        
+        await ws_client.subscribe_user_data(listen_key)
+        await ws_client.start()
     
     async def _listen_source_account(self, name, interface):
         logger.info(f"Starting WebSocket listener for {name}")
