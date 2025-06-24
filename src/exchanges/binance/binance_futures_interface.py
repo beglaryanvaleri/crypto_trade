@@ -6,8 +6,8 @@ from decimal import Decimal, ROUND_HALF_UP
 from binance import Client
 import requests
 
-from src.utils.logger import get_logger
-from src.config import Config
+from utils.logger import get_logger
+from config import Config
 
 class BinanceFuturesInterface:
     """Interface for interacting with Binance Futures API."""
@@ -60,6 +60,23 @@ class BinanceFuturesInterface:
     def get_symbol_info(self, symbol: str) -> Optional[Dict]:
         """Get cached symbol information."""
         return self._symbols_info.get(symbol)
+    
+    def get_active_futures_symbols(self) -> List[str]:
+        """Get list of active perpetual futures symbols."""
+        try:
+            exchange_info = self._client.futures_exchange_info()
+            symbols = []
+            
+            for symbol_info in exchange_info['symbols']:
+                if symbol_info['status'] == 'TRADING' and symbol_info['contractType'] == 'PERPETUAL':
+                    symbols.append(symbol_info['symbol'].lower())
+            
+            self.logger.info(f"Found {len(symbols)} active perpetual futures symbols")
+            return symbols
+            
+        except Exception as e:
+            self.logger.error(f"Failed to get active symbols: {e}")
+            return []
         
     def get_account_balance(self, asset: str = 'USDT') -> Optional[Dict[str, float]]:
         """

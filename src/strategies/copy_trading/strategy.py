@@ -1,8 +1,8 @@
 import asyncio
-from src.exchanges.binance import BinanceFuturesInterface
-from src.exchanges.binance.binance_futures_websocket_client import BinanceFuturesWebSocketClient
-from src.strategies.copy_trading.config import Config
-from src.utils.logger import get_logger
+from exchanges.binance import BinanceFuturesInterface
+from exchanges.binance.binance_futures_websocket_client import BinanceFuturesWebSocketClient
+from strategies.copy_trading.config import Config
+from utils.logger import get_logger
 
 logger = get_logger('copy_trading.strategy')
 

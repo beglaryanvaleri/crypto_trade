@@ -4,7 +4,7 @@ import yaml
 from pathlib import Path
 from typing import Any, Union
 
-from src.utils.logger import get_logger
+from utils.logger import get_logger
 
 logger = get_logger('yaml_loader')
 

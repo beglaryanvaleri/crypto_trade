@@ -1,5 +1,5 @@
 import asyncio
-from src.strategies.copy_trading.strategy import CopyTradingStrategy
+from strategies.copy_trading.strategy import CopyTradingStrategy
 
 async def main():
     strategy = CopyTradingStrategy()

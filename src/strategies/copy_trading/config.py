@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from src.utils.yaml_loader import load_yaml_with_env
+from utils.yaml_loader import load_yaml_with_env
 
 load_dotenv()
 
