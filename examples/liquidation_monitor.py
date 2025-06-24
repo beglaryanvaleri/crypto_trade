@@ -68,6 +68,9 @@ async def monitor_liquidations(trade_mode: str, save_data: bool):
                 avg_price = order['ap']
                 timestamp = data['E']
                 
+                # Calculate USD amount (notional value)
+                usdt_amount = float(quantity) * float(avg_price)
+                
                 # Update counters
                 liquidation_count['total'] += 1
                 if symbol not in liquidation_count['by_symbol']:
@@ -83,6 +86,7 @@ async def monitor_liquidations(trade_mode: str, save_data: bool):
                     'quantity': float(quantity),
                     'price': float(price),
                     'avg_price': float(avg_price),
+                    'usdt_amount': usdt_amount,
                     'order_status': order['X'],
                     'order_type': order['o'],
                     'time_in_force': order['f']
@@ -96,8 +100,8 @@ async def monitor_liquidations(trade_mode: str, save_data: bool):
                     except Exception as e:
                         logger.error(f"Failed to save liquidation data: {e}")
                 
-                # logger.warning(f"🔴 LIQUIDATION #{liquidation_count['total']}: {symbol} {side} {quantity} @ ${price} (avg: ${avg_price})")
-                logger.info(f"Liquidation details: Symbol={symbol}, Side={side}, Qty={quantity}, Price=${price}, AvgPrice=${avg_price}")
+                logger.warning(f"🔴 LIQUIDATION #{liquidation_count['total']}: {symbol} {side} {quantity} @ ${price} (avg: ${avg_price}) = ${usdt_amount:,.2f}")
+                # logger.info(f"Liquidation details: Symbol={symbol}, Side={side}, Qty={quantity}, Price=${price}, AvgPrice=${avg_price}, USDAmount=${usdt_amount:,.2f}")
     
     # Create WebSocket client
     ws_client = BinanceFuturesWebSocketClient(
