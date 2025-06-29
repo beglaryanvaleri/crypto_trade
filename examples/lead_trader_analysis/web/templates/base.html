@@ -16,6 +16,7 @@
             </a>
             
             <div class="navbar-nav ms-auto">
+                {% if session.get('logged_in') %}
                 <div class="nav-item">
                     <select id="global-user-select" class="form-select form-select-sm" style="min-width: 200px;" onchange="changeGlobalUser()">
                         <option value="">Choose a user...</option>
@@ -27,6 +28,12 @@
                         <i class="bi bi-gear"></i> Manage Users
                     </a>
                 </div>
+                <div class="nav-item ms-2">
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </nav>

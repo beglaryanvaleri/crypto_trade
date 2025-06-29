@@ -19,47 +19,16 @@
     </div>
 </div>
 
-<!-- Feature Cards (shown/hidden by JavaScript) -->
-<div id="feature-cards" class="row mb-4" style="display: none;">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-people"></i>
-                    Lead Traders
-                </h5>
-                <p class="card-text">Manage followed lead traders and their settings.</p>
-                <a href="#" id="manage-lead-traders-link" class="btn btn-primary">Manage</a>
-            </div>
+<!-- Lead Traders Management Link -->
+<div id="lead-traders-link" class="row mb-4" style="display: none;">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4>Lead Traders Management</h4>
+            <a href="#" id="manage-lead-traders-link" class="btn btn-primary">
+                <i class="bi bi-people"></i> Manage Lead Traders
+            </a>
         </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-graph-up"></i>
-                    Current Positions
-                </h5>
-                <p class="card-text">View your current trading positions.</p>
-                <button onclick="loadUserPositions()" class="btn btn-primary">
-                    <i class="bi bi-arrow-clockwise"></i> Refresh from Binance
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-arrow-left-right"></i>
-                    Reverse Signals
-                </h5>
-                <p class="card-text">Calculate reverse trading signals.</p>
-                <a href="#" class="btn btn-primary">Calculate</a>
-            </div>
-        </div>
+        <hr>
     </div>
 </div>
 
@@ -90,11 +59,14 @@
 <div id="summary-section" class="row mb-4" style="display: none;">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">
                     <i class="bi bi-calculator"></i>
                     Trade Summary - Calculated vs Actual
                 </h5>
+                <button onclick="updateTradeSummary()" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-clockwise"></i> Update
+                </button>
             </div>
             <div class="card-body">
                 <div id="summary-loading" class="text-center" style="display: none;">
@@ -113,11 +85,14 @@
 <div id="positions-section" class="row" style="display: none;">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">
                     <i class="bi bi-table"></i>
                     Your Current Positions
                 </h5>
+                <button onclick="loadUserPositions()" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-clockwise"></i> Update
+                </button>
             </div>
             <div class="card-body">
                 <div id="positions-loading" class="text-center" style="display: none;">
@@ -282,18 +257,18 @@ function loadLeadTradersOverview() {
                                                         <option value="SELL">SELL</option>
                                                     </select>
                                                 </td>
-                                                <td>
+                                                <td style="width: 140px;">
                                                     <input type="number" class="form-control form-control-sm" 
                                                            id="new-size-${trader.id}" placeholder="1.0" 
-                                                           step="0.000001" style="width: 90px;">
+                                                           step="0.000001" style="width: 130px; font-size: 14px; font-weight: bold;">
                                                 </td>
-                                                <td>
+                                                <td style="width: 120px;">
                                                     <span class="text-warning"><strong>${trader.margin_balance > 0 && trader.copy_balance > 0 ? (trader.copy_balance / trader.margin_balance).toFixed(3) : '0.010'}</strong></span>
                                                 </td>
-                                                <td>
+                                                <td style="width: 120px;">
                                                     <input type="number" class="form-control form-control-sm" 
-                                                           id="new-coeff-${trader.id}" value="0.01" 
-                                                           step="0.001" style="width: 80px;">
+                                                           id="new-coeff-${trader.id}" value="${trader.margin_balance > 0 && trader.copy_balance > 0 ? (trader.copy_balance / trader.margin_balance).toFixed(5) : '0.01000'}" 
+                                                           step="0.001" style="width: 110px; font-size: 14px;">
                                                 </td>
                                                 <td>
                                                     <button class="btn btn-sm btn-success" onclick="addNewPosition(${trader.id})" title="Add Position">
@@ -328,23 +303,23 @@ function loadLeadTradersOverview() {
                                 overviewHtml += `
                                     <tr id="pos-${pos.id}">
                                         <td><strong>${pos.symbol}</strong></td>
-                                        <td>
+                                        <td style="width: 80px;">
                                             <span class="badge bg-${pos.side === 'BUY' ? 'success' : 'danger'}">${pos.side}</span>
                                         </td>
-                                        <td>
+                                        <td style="width: 140px;">
                                             <input type="number" class="form-control form-control-sm" 
-                                                   style="width: 90px; display: inline-block;" 
+                                                   style="width: 130px; font-size: 14px; font-weight: bold;" 
                                                    value="${pos.size.toFixed(3)}" 
                                                    step="0.000001" min="0"
                                                    onchange="updatePositionSize(${pos.id}, this.value)">
                                         </td>
-                                        <td>
+                                        <td style="width: 120px;">
                                             <span class="text-warning"><strong>${pos.suggested_coeff.toFixed(5)}</strong></span>
                                             <small class="text-muted">(${(pos.size * pos.suggested_coeff).toFixed(5)})</small>
                                         </td>
-                                        <td>
+                                        <td style="width: 120px;">
                                             <input type="number" class="form-control form-control-sm" 
-                                                   style="width: 80px; display: inline-block;" 
+                                                   style="width: 110px; font-size: 14px;" 
                                                    value="${pos.copy_balance_coeff.toFixed(5)}"
                                                    step="0.001" min="0"
                                                    onchange="updatePositionCoeff(${pos.id}, this.value)">
@@ -379,19 +354,19 @@ function loadLeadTradersOverview() {
                                             <option value="SELL">SELL</option>
                                         </select>
                                     </td>
-                                    <td>
+                                    <td style="width: 140px;">
                                         <input type="number" class="form-control form-control-sm" 
                                                id="new-size-${trader.id}" placeholder="1.0" 
-                                               step="0.000001" style="width: 90px;">
+                                               step="0.000001" style="width: 130px; font-size: 14px; font-weight: bold;">
                                     </td>
-                                    <td>
+                                    <td style="width: 120px;">
                                         <span class="text-warning"><strong>${trader.margin_balance > 0 && trader.copy_balance > 0 ? (trader.copy_balance / trader.margin_balance).toFixed(3) : '0.010'}</strong></span>
                                         <small class="text-muted" id="suggested-size-${trader.id}">(-)</small>
                                     </td>
-                                    <td>
+                                    <td style="width: 120px;">
                                         <input type="number" class="form-control form-control-sm" 
-                                               id="new-coeff-${trader.id}" value="0.01" 
-                                               step="0.001" style="width: 80px;">
+                                               id="new-coeff-${trader.id}" value="${trader.margin_balance > 0 && trader.copy_balance > 0 ? (trader.copy_balance / trader.margin_balance).toFixed(5) : '0.01000'}" 
+                                               step="0.001" style="width: 110px; font-size: 14px;">
                                     </td>
                                     <td>-</td>
                                     <td>-</td>
@@ -579,10 +554,10 @@ function addNewPosition(traderId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Clear the form
+            // Clear the form and refresh to get updated suggested coefficient
             document.getElementById(`new-symbol-${traderId}`).value = '';
             document.getElementById(`new-size-${traderId}`).value = '';
-            document.getElementById(`new-coeff-${traderId}`).value = '0.01';
+            // Note: coefficient will be reset when the overview refreshes
             
             // Refresh the overview
             loadLeadTradersOverview();
@@ -768,6 +743,53 @@ function loadSummaryTable() {
         });
 }
 
+function updateTradeSummary() {
+    const userId = getSelectedUserId();
+    if (!userId) {
+        console.log('No user selected for updateTradeSummary');
+        return;
+    }
+    
+    // Show loading state for summary
+    const loadingDiv = document.getElementById('summary-loading');
+    const contentDiv = document.getElementById('summary-content');
+    
+    if (loadingDiv) {
+        loadingDiv.style.display = 'block';
+        const loadingText = loadingDiv.querySelector('p');
+        if (loadingText) {
+            loadingText.textContent = 'Refreshing positions and updating summary...';
+        }
+    }
+    
+    if (contentDiv) {
+        contentDiv.innerHTML = '';
+    }
+    
+    // First refresh user positions from Binance, then update summary
+    fetch(`/api/user_positions/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Positions refresh result:', data);
+            if (data.success) {
+                // Now load the updated summary
+                loadSummaryTable();
+            } else {
+                if (loadingDiv) loadingDiv.style.display = 'none';
+                if (contentDiv) {
+                    contentDiv.innerHTML = `<div class="alert alert-danger">Error refreshing positions: ${data.error}</div>`;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error refreshing positions:', error);
+            if (loadingDiv) loadingDiv.style.display = 'none';
+            if (contentDiv) {
+                contentDiv.innerHTML = `<div class="alert alert-danger">Error refreshing positions: ${error}</div>`;
+            }
+        });
+}
+
 function refreshTraderPositions(traderId) {
     // TODO: Implement position refresh for specific trader
     alert('Position refresh for trader ID ' + traderId + ' coming soon!');
@@ -780,7 +802,7 @@ function updateUIForSelectedUser() {
     if (userId && user) {
         // Show user-specific sections
         document.getElementById('user-dashboard').style.display = 'block';
-        document.getElementById('feature-cards').style.display = 'flex';
+        document.getElementById('lead-traders-link').style.display = 'block';
         document.getElementById('overview-section').style.display = 'block';
         document.getElementById('summary-section').style.display = 'block';
         document.getElementById('positions-section').style.display = 'block';
@@ -802,7 +824,7 @@ function updateUIForSelectedUser() {
     } else {
         // Show welcome section
         document.getElementById('user-dashboard').style.display = 'none';
-        document.getElementById('feature-cards').style.display = 'none';
+        document.getElementById('lead-traders-link').style.display = 'none';
         document.getElementById('overview-section').style.display = 'none';
         document.getElementById('summary-section').style.display = 'none';
         document.getElementById('positions-section').style.display = 'none';

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Binance Lead Trader Analysis{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-shield-lock"></i>
+                    Login Required
+                </h4>
+            </div>
+            <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            Login
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-3 text-center text-muted">
+                    <small>Enter your credentials to access the application</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Override the global user selection for login page
+document.addEventListener('DOMContentLoaded', function() {
+    // Hide the user selector in navbar for login page
+    const globalUserSelect = document.getElementById('global-user-select');
+    if (globalUserSelect && globalUserSelect.parentElement) {
+        globalUserSelect.parentElement.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

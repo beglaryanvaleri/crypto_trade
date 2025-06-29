@@ -7,30 +7,82 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
 from database import Database
 from typing import List, Dict
+from functools import wraps
+import os
+import logging
+from dotenv import load_dotenv
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Try to import Binance interface
 try:
     from src.exchanges.binance import BinanceFuturesInterface
     BINANCE_AVAILABLE = True
+    logger.info("Binance interface loaded successfully")
 except ImportError as e:
-    print(f"Warning: Binance interface not available: {e}")
+    logger.warning(f"Binance interface not available: {e}")
     BINANCE_AVAILABLE = False
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-this'  # Change this in production
+
+# Load environment variables
+load_dotenv()
+
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key-change-this-in-production')
 
 # Initialize database
 db = Database()
 
+# Authentication credentials from environment variables
+AUTH_USERNAME = os.getenv('WEB_USERNAME', 'username')
+AUTH_PASSWORD = os.getenv('WEB_PASSWORD', 'password')
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect(url_for('login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login page."""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username == AUTH_USERNAME and password == AUTH_PASSWORD:
+            session['logged_in'] = True
+            next_page = request.args.get('next')
+            logger.info(f"Successful login from {request.remote_addr}")
+            return redirect(next_page or url_for('index'))
+        else:
+            logger.warning(f"Failed login attempt from {request.remote_addr} with username: {username}")
+            flash('Invalid username or password', 'error')
+    
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    """Logout user."""
+    session.pop('logged_in', None)
+    flash('You have been logged out', 'info')
+    return redirect(url_for('login'))
+
 @app.route('/')
+@login_required
 def index():
     """Main index page with global user selection."""
     return render_template('index.html')
 
 @app.route('/api/user_positions/<int:user_id>')
+@login_required
 def get_user_positions(user_id: int):
     """Get current user positions."""
     try:
@@ -55,9 +107,8 @@ def get_user_positions(user_id: int):
         )
         
         # Get positions from Binance
+        logger.info(f"Fetching positions from Binance for user {user_id}")
         binance_positions = binance.get_all_positions()
-        
-        print(f"Raw Binance positions for user {user_id}: {binance_positions}")
         
         # Convert to our format
         positions = []
@@ -88,6 +139,7 @@ def get_user_positions(user_id: int):
         return jsonify({"success": False, "error": str(e)})
 
 @app.route('/api/lead_traders_overview/<int:user_id>')
+@login_required
 def get_lead_traders_overview(user_id: int):
     """Get all lead traders and their positions for dashboard overview."""
     try:
@@ -101,7 +153,6 @@ def get_lead_traders_overview(user_id: int):
         # Get positions for each trader and calculate reverse trades
         overview_data = []
         for trader in lead_traders:
-            print(f"Processing trader {trader['id']}: reverse={trader['reverse_trading']}, coeff={trader['reverse_coefficient']}")
             positions = db.get_lead_positions(trader['id'])
             
             # Calculate reverse trades for each position
@@ -233,13 +284,9 @@ def update_trader_settings():
         reverse_trading = bool(request.json.get('reverse_trading', False))
         reverse_coefficient = float(request.json.get('reverse_coefficient', 1.0))
         
-        print(f"Updating trader {trader_id}: margin={margin_balance}, copy={copy_balance}, reverse={reverse_trading}, coeff={reverse_coefficient}")
-        
         success = db.update_lead_trader(
             trader_id, reverse_trading, reverse_coefficient, margin_balance, copy_balance
         )
-        
-        print(f"Update result: {success}")
         
         if success:
             return jsonify({"success": True, "message": "Trader settings updated"})
@@ -247,10 +294,10 @@ def update_trader_settings():
             return jsonify({"success": False, "error": "Failed to update trader settings"})
             
     except Exception as e:
-        print(f"Error updating trader settings: {e}")
         return jsonify({"success": False, "error": str(e)})
 
 @app.route('/api/users')
+@login_required
 def get_users_api():
     """Get all users for global user selection."""
     try:
@@ -269,13 +316,11 @@ def get_trade_summary(user_id: int):
         
         # Get all lead traders for this user
         lead_traders = db.get_lead_traders(user_id)
-        print(f"Found {len(lead_traders)} lead traders for user {user_id}")
         
         # Aggregate calculated positions by symbol
         calculated_positions = {}
         for trader in lead_traders:
             positions = db.get_lead_positions(trader['id'])
-            print(f"Trader {trader['id']} ({trader['nickname']}) has {len(positions)} positions")
             
             for pos in positions:
                 symbol = pos['symbol']
@@ -303,8 +348,6 @@ def get_trade_summary(user_id: int):
         
         # Get user's actual positions
         actual_positions = db.get_user_positions(user_id)
-        print(f"User has {len(actual_positions)} actual positions")
-        
         actual_by_symbol = {}
         for pos in actual_positions:
             symbol = pos['symbol']
@@ -321,9 +364,6 @@ def get_trade_summary(user_id: int):
         # Create summary comparison
         summary = []
         all_symbols = set(calculated_positions.keys()) | set(actual_by_symbol.keys())
-        print(f"All symbols found: {all_symbols}")
-        print(f"Calculated positions: {calculated_positions}")
-        print(f"Actual positions: {actual_by_symbol}")
         
         for symbol in all_symbols:
             calc = calculated_positions.get(symbol, {'BUY': 0, 'SELL': 0})
@@ -366,7 +406,6 @@ def get_trade_summary(user_id: int):
                     'difference_abs': difference_abs,
                     'difference_percent': difference_percent
                 })
-                print(f"Added to summary: {symbol} - calc:{calc_size} {calc_side}, actual:{actual_size} {actual_side}, diff:{difference_abs} {difference_side} ({difference_percent}%)")
         
         # Sort by symbol
         summary.sort(key=lambda x: x['symbol'])
@@ -381,6 +420,7 @@ def get_trade_summary(user_id: int):
         return jsonify({"success": False, "error": str(e)})
 
 @app.route('/users')
+@login_required
 def manage_users():
     """User management page."""
     users = db.get_users()
