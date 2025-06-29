@@ -5,9 +5,10 @@ from typing import Dict, List, Optional
 from decimal import Decimal, ROUND_HALF_UP
 from binance import Client
 import requests
+import time
 
-from src.utils.logger import get_logger
-from src.config import Config
+from utils.logger import get_logger
+from config import Config
 
 class BinanceFuturesInterface:
     """Interface for interacting with Binance Futures API."""
@@ -60,6 +61,23 @@ class BinanceFuturesInterface:
     def get_symbol_info(self, symbol: str) -> Optional[Dict]:
         """Get cached symbol information."""
         return self._symbols_info.get(symbol)
+    
+    def get_active_futures_symbols(self) -> List[str]:
+        """Get list of active perpetual futures symbols."""
+        try:
+            exchange_info = self._client.futures_exchange_info()
+            symbols = []
+            
+            for symbol_info in exchange_info['symbols']:
+                if symbol_info['status'] == 'TRADING' and symbol_info['contractType'] == 'PERPETUAL':
+                    symbols.append(symbol_info['symbol'].lower())
+            
+            self.logger.info(f"Found {len(symbols)} active perpetual futures symbols")
+            return symbols
+            
+        except Exception as e:
+            self.logger.error(f"Failed to get active symbols: {e}")
+            return []
         
     def get_account_balance(self, asset: str = 'USDT') -> Optional[Dict[str, float]]:
         """
@@ -120,6 +138,89 @@ class BinanceFuturesInterface:
             ]
         except Exception as e:
             self.logger.error(f"Failed to get klines for {symbol}: {e}")
+            return []
+    
+    def get_historical_klines(self, symbol: str, interval: str, start_time: int, end_time: int) -> List[Dict]:
+        """
+        Get historical candlestick data for a specific time range.
+        
+        Args:
+            symbol: Trading pair symbol
+            interval: Kline interval (1m, 5m, 15m, 1h, 4h, 1d, etc.)
+            start_time: Start time in milliseconds
+            end_time: End time in milliseconds
+            
+        Returns:
+            List of kline dicts with OHLCV data
+        """
+        try:
+            all_klines = []
+            current_start = start_time
+            limit = 1500  # Binance max limit
+            
+            while current_start < end_time:
+                # Get batch of klines
+                klines = self._client.futures_klines(
+                    symbol=symbol,
+                    interval=interval,
+                    startTime=current_start,
+                    endTime=end_time,
+                    limit=limit
+                )
+                
+                if not klines:
+                    break
+                
+                all_klines.extend(klines)
+                
+                # Update start time for next batch
+                # Set to last candle timestamp + interval
+                last_timestamp = klines[-1][0]
+                
+                # Calculate interval in milliseconds
+                interval_ms = {
+                    '1m': 60000,
+                    '3m': 180000,
+                    '5m': 300000,
+                    '15m': 900000,
+                    '30m': 1800000,
+                    '1h': 3600000,
+                    '2h': 7200000,
+                    '4h': 14400000,
+                    '6h': 21600000,
+                    '8h': 28800000,
+                    '12h': 43200000,
+                    '1d': 86400000,
+                    '3d': 259200000,
+                    '1w': 604800000,
+                    '1M': 2592000000
+                }.get(interval, 60000)
+                
+                current_start = last_timestamp + interval_ms
+                
+                # If we got less than limit, we're done
+                if len(klines) < limit:
+                    break
+                
+                # Small delay to avoid rate limits
+                time.sleep(0.1)
+            
+            # Convert to our format
+            return [
+                {
+                    "timestamp": k[0],
+                    "open": float(k[1]),
+                    "high": float(k[2]),
+                    "low": float(k[3]),
+                    "close": float(k[4]),
+                    "volume": float(k[5]),
+                    "quote_volume": float(k[7]),
+                    "trades": k[8]
+                }
+                for k in all_klines
+            ]
+        except Exception as e:
+            self.logger.error(f"Failed to get historical klines for {symbol}: {e}")
             return []
             
     def create_market_order(self, symbol: str, side: str, quantity: float, 

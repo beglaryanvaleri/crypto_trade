@@ -4,8 +4,8 @@ import time
 from typing import Dict, List
 import websockets
 
-from src.utils.logger import get_logger
-from src.config import Config
+from utils.logger import get_logger
+from config import Config
 
 
 class BinanceFuturesWebSocketClient:

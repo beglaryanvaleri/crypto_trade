@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-from src.utils.logger import get_logger
+from utils.logger import get_logger
 
 logger = get_logger('config')
 
