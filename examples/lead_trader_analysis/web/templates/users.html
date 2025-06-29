@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>User Management</h2>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Add New User -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person-plus"></i>
+                    Add New User
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_user') }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="display_name" class="form-label">Display Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="display_name" name="display_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="api_key" class="form-label">Binance API Key</label>
+                            <input type="text" class="form-control" id="api_key" name="api_key" placeholder="Optional - can be added later">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="api_secret" class="form-label">Binance API Secret</label>
+                            <input type="password" class="form-control" id="api_secret" name="api_secret" placeholder="Optional - can be added later">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="testnet" name="testnet">
+                                <label class="form-check-label" for="testnet">
+                                    Use Testnet (for testing)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Add User
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Existing Users -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-people"></i>
+                    Existing Users
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if users %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Display Name</th>
+                                <th>Username</th>
+                                <th>Mode</th>
+                                <th>API Configured</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.display_name }}</td>
+                                <td>{{ user.username }}</td>
+                                <td>
+                                    {% if user.testnet %}
+                                    <span class="badge bg-warning">Testnet</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Live</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">No</span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('index', user_id=user.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-box-arrow-in-right"></i> Select
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="editUser({{ user.id }})">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    No users found. Add your first user using the form above.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<script>
+function editUser(userId) {
+    // TODO: Implement user editing functionality
+    alert('User editing functionality coming soon!');
+}
+</script>
+{% endblock %}

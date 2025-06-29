@@ -1,0 +1,26 @@
+# Web application requirements for Lead Trader Analysis
+# Add the features you want to implement in this application
+
+## Current Status
+- ✅ Basic Flask app with Bootstrap 5
+- ✅ Simple index page with hello message
+- ✅ Navigation bar and responsive layout
+
+## Planned Features
+Write below what features you want to implement:
+
+### Example features (remove/modify as needed):
+1. Upload HTML files from Binance portfolios
+2. Display trader list with key metrics
+3. Trader detail pages with full portfolio info
+4. Position analysis and reverse trading signals
+5. Export functionality for analysis results
+6. Real-time position tracking
+7. Performance comparison between traders
+8. Risk analysis and recommendations
+
+## Implementation Notes
+- Use existing parser (binance_portfolio_parser.py) for data extraction
+- Integrate with current JSON export functionality
+- Keep responsive design with Bootstrap 5
+- Add proper error handling and validation

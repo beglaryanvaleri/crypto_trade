@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Binance Lead Trader Analysis{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="bi bi-graph-up-arrow"></i>
+                Lead Trader Analysis
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item">
+                    <select id="global-user-select" class="form-select form-select-sm" style="min-width: 200px;" onchange="changeGlobalUser()">
+                        <option value="">Choose a user...</option>
+                        <!-- Users will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="nav-item ms-2">
+                    <a href="{{ url_for('manage_users') }}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-gear"></i> Manage Users
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global user management
+        let globalUsers = [];
+        let selectedUserId = null;
+        
+        // Load users and initialize global user selection
+        async function initializeGlobalUserSelect() {
+            try {
+                const response = await fetch('/api/users');
+                const data = await response.json();
+                
+                if (data.success) {
+                    globalUsers = data.users;
+                    populateUserSelect();
+                    restoreSelectedUser();
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+        
+        function populateUserSelect() {
+            const select = document.getElementById('global-user-select');
+            if (!select) return;
+            
+            // Clear existing options except the first one
+            select.innerHTML = '<option value="">Choose a user...</option>';
+            
+            // Add users
+            globalUsers.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.display_name}${user.testnet ? ' (Testnet)' : ''}`;
+                select.appendChild(option);
+            });
+        }
+        
+        function restoreSelectedUser() {
+            // Try to restore from sessionStorage first, then URL parameter
+            const savedUserId = sessionStorage.getItem('selectedUserId');
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlUserId = urlParams.get('user_id');
+            
+            const userIdToSelect = savedUserId || urlUserId;
+            
+            if (userIdToSelect) {
+                selectedUserId = parseInt(userIdToSelect);
+                const select = document.getElementById('global-user-select');
+                if (select) {
+                    select.value = selectedUserId;
+                }
+                
+                // Save to sessionStorage
+                sessionStorage.setItem('selectedUserId', selectedUserId);
+                
+                // Update URL if needed (without page reload)
+                if (!urlUserId || urlUserId !== selectedUserId.toString()) {
+                    const newUrl = new URL(window.location);
+                    newUrl.searchParams.set('user_id', selectedUserId);
+                    window.history.replaceState({}, '', newUrl);
+                }
+            }
+        }
+        
+        function changeGlobalUser() {
+            const select = document.getElementById('global-user-select');
+            const newUserId = select.value;
+            
+            if (newUserId) {
+                selectedUserId = parseInt(newUserId);
+                sessionStorage.setItem('selectedUserId', selectedUserId);
+                
+                // Update URL without reload
+                const newUrl = new URL(window.location);
+                newUrl.searchParams.set('user_id', selectedUserId);
+                window.history.pushState({}, '', newUrl);
+                
+                // Trigger UI update if we're on the index page and updateUIForSelectedUser exists
+                if (typeof updateUIForSelectedUser === 'function') {
+                    updateUIForSelectedUser();
+                } else {
+                    // If not on index page, redirect there
+                    window.location.href = `/?user_id=${selectedUserId}`;
+                }
+            } else {
+                selectedUserId = null;
+                sessionStorage.removeItem('selectedUserId');
+                
+                // Update URL without reload
+                const newUrl = new URL(window.location);
+                newUrl.searchParams.delete('user_id');
+                window.history.pushState({}, '', newUrl);
+                
+                // Trigger UI update if we're on the index page
+                if (typeof updateUIForSelectedUser === 'function') {
+                    updateUIForSelectedUser();
+                } else {
+                    window.location.href = '/';
+                }
+            }
+        }
+        
+        function getSelectedUserId() {
+            return selectedUserId;
+        }
+        
+        function getSelectedUser() {
+            if (!selectedUserId) return null;
+            return globalUsers.find(user => user.id === selectedUserId) || null;
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeGlobalUserSelect();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Lead Trader Management - {{ user.display_name }}</h2>
+            <a href="{{ url_for('index', user_id=user.id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Add New Lead Trader -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person-plus"></i>
+                    Add New Lead Trader
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_lead_trader') }}">
+                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="portfolio_id" class="form-label">Portfolio ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="portfolio_id" name="portfolio_id" required 
+                                   placeholder="e.g., 4574016324038903041">
+                            <div class="form-text">Get this from the Binance Copy Trading URL</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="nickname" class="form-label">Nickname <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nickname" name="nickname" required>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="reverse_trading" name="reverse_trading">
+                                <label class="form-check-label" for="reverse_trading">
+                                    Enable Reverse Trading
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="reverse_coefficient" class="form-label">Reverse Coefficient</label>
+                            <input type="number" class="form-control" id="reverse_coefficient" name="reverse_coefficient" 
+                                   step="0.1" value="1.0" min="0">
+                            <div class="form-text">Multiplier for reverse trades (default: 1.0)</div>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Add Lead Trader
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Existing Lead Traders -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-people"></i>
+                    Following {{ lead_traders|length }} Lead Traders
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if lead_traders %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nickname</th>
+                                <th>Portfolio ID</th>
+                                <th>Reverse Trading</th>
+                                <th>Reverse Coeff</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trader in lead_traders %}
+                            <tr>
+                                <td>{{ trader.nickname }}</td>
+                                <td><code>{{ trader.portfolio_id }}</code></td>
+                                <td>
+                                    {% if trader.reverse_trading %}
+                                    <span class="badge bg-warning">Yes</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ trader.reverse_coefficient }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editTrader({{ trader.id }}, '{{ trader.nickname }}', {{ trader.reverse_trading|lower }}, {{ trader.reverse_coefficient }})">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info" onclick="updatePositions({{ trader.id }}, '{{ trader.nickname }}')">
+                                        <i class="bi bi-arrow-clockwise"></i> Update
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="removeTrader({{ trader.id }}, '{{ trader.nickname }}')">
+                                        <i class="bi bi-trash"></i> Remove
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    No lead traders found. Add your first lead trader using the form above.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Lead Trader</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('update_lead_trader') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                    <input type="hidden" name="trader_id" id="edit_trader_id">
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="edit_reverse_trading" name="reverse_trading">
+                            <label class="form-check-label" for="edit_reverse_trading">
+                                Enable Reverse Trading
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_reverse_coefficient" class="form-label">Reverse Coefficient</label>
+                        <input type="number" class="form-control" id="edit_reverse_coefficient" name="reverse_coefficient" 
+                               step="0.1" min="0" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<script>
+function editTrader(id, nickname, reverse, reverseCoeff) {
+    document.getElementById('edit_trader_id').value = id;
+    document.getElementById('edit_reverse_trading').checked = reverse;
+    document.getElementById('edit_reverse_coefficient').value = reverseCoeff;
+    
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+function updatePositions(id, nickname) {
+    // TODO: Implement position update functionality
+    alert(`Position update for ${nickname} coming soon!`);
+}
+
+function removeTrader(id, nickname) {
+    if (confirm(`Are you sure you want to remove lead trader "${nickname}"?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("remove_lead_trader") }}';
+        
+        const userIdInput = document.createElement('input');
+        userIdInput.type = 'hidden';
+        userIdInput.name = 'user_id';
+        userIdInput.value = '{{ user.id }}';
+        
+        const traderIdInput = document.createElement('input');
+        traderIdInput.type = 'hidden';
+        traderIdInput.name = 'trader_id';
+        traderIdInput.value = id;
+        
+        form.appendChild(userIdInput);
+        form.appendChild(traderIdInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}
