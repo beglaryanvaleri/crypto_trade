@@ -796,16 +796,10 @@ function refreshTraderPositions(traderId) {
 }
 
 function updateUIForSelectedUser() {
-    console.log('=== updateUIForSelectedUser START ===');
     const userId = getSelectedUserId();
     const user = getSelectedUser();
     
-    console.log('Selected user ID:', userId);
-    console.log('Selected user object:', user);
-    
     if (userId && user) {
-        console.log('User is selected, showing user-specific sections...');
-        
         // Show user-specific sections
         document.getElementById('user-dashboard').style.display = 'block';
         document.getElementById('lead-traders-link').style.display = 'block';
@@ -823,15 +817,11 @@ function updateUIForSelectedUser() {
         // Update manage link
         document.getElementById('manage-lead-traders-link').href = `/lead_traders/${userId}`;
         
-        console.log('Loading data for user:', userId);
-        
         // Load data and refresh positions first
         loadUserPositions(); // This will refresh positions from Binance
         loadLeadTradersOverview();
         loadSummaryTable();
     } else {
-        console.log('No user selected, showing welcome section...');
-        
         // Show welcome section
         document.getElementById('user-dashboard').style.display = 'none';
         document.getElementById('lead-traders-link').style.display = 'none';
@@ -840,23 +830,14 @@ function updateUIForSelectedUser() {
         document.getElementById('positions-section').style.display = 'none';
         document.getElementById('no-user-section').style.display = 'block';
     }
-    
-    console.log('=== updateUIForSelectedUser END ===');
 }
 
 // Auto-load data if user is selected
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== DOMContentLoaded START ===');
-    console.log('Current URL:', window.location.href);
-    console.log('URL params:', window.location.search);
-    
     // Wait a bit for global user selection to initialize
     setTimeout(() => {
-        console.log('Running updateUIForSelectedUser after timeout...');
         updateUIForSelectedUser();
     }, 300);
-    
-    console.log('=== DOMContentLoaded END ===');
 });
 </script>
 {% endblock %}

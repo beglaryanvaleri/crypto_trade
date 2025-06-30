@@ -51,108 +51,66 @@
         
         // Load users and initialize global user selection
         async function initializeGlobalUserSelect() {
-            console.log('=== initializeGlobalUserSelect START ===');
-            console.log('Current URL:', window.location.href);
-            console.log('URL search params:', window.location.search);
             try {
                 const response = await fetch('/api/users');
                 const data = await response.json();
                 
-                console.log('Users API response:', data);
-                
                 if (data.success) {
                     globalUsers = data.users;
-                    console.log('Loaded users:', globalUsers);
                     populateUserSelect();
                     restoreSelectedUser();
                 }
             } catch (error) {
                 console.error('Error loading users:', error);
             }
-            console.log('=== initializeGlobalUserSelect END ===');
         }
         
         function populateUserSelect() {
-            console.log('=== populateUserSelect START ===');
             const select = document.getElementById('global-user-select');
-            console.log('Select element:', select);
-            if (!select) {
-                console.error('Select element not found!');
-                return;
-            }
+            if (!select) return;
             
             // Clear existing options except the first one
             select.innerHTML = '<option value="">Choose a user...</option>';
             
             // Add users
-            console.log('Adding users to select:', globalUsers.length);
             globalUsers.forEach(user => {
                 const option = document.createElement('option');
                 option.value = user.id;
                 option.textContent = `${user.display_name}${user.testnet ? ' (Testnet)' : ''}`;
                 select.appendChild(option);
-                console.log(`Added option: value=${user.id}, text=${option.textContent}`);
             });
-            console.log('=== populateUserSelect END ===');
         }
         
         function restoreSelectedUser() {
-            console.log('=== restoreSelectedUser START ===');
-            
             // Try URL parameter first, then sessionStorage
             const urlParams = new URLSearchParams(window.location.search);
             const urlUserId = urlParams.get('user_id');
             const savedUserId = sessionStorage.getItem('selectedUserId');
             
-            console.log('URL params:', window.location.search);
-            console.log('URL user_id:', urlUserId);
-            console.log('Saved user_id:', savedUserId);
-            
             // Prioritize URL parameter over saved session
             const userIdToSelect = urlUserId || savedUserId;
-            console.log('User ID to select:', userIdToSelect);
             
             if (userIdToSelect) {
                 selectedUserId = parseInt(userIdToSelect);
-                console.log('Setting selectedUserId to:', selectedUserId);
-                
                 const select = document.getElementById('global-user-select');
-                console.log('Select element:', select);
-                
                 if (select) {
                     // Make sure the option exists before setting value
-                    const options = Array.from(select.options);
-                    console.log('Available options:', options.map(opt => ({value: opt.value, text: opt.text})));
-                    
-                    const optionExists = options.some(opt => opt.value === selectedUserId.toString());
-                    console.log('Option exists:', optionExists);
-                    
+                    const optionExists = Array.from(select.options).some(opt => opt.value === selectedUserId.toString());
                     if (optionExists) {
                         select.value = selectedUserId;
-                        console.log('Set select value to:', selectedUserId);
-                    } else {
-                        console.warn('Option does not exist for user ID:', selectedUserId);
                     }
-                } else {
-                    console.error('Select element not found during restore!');
                 }
                 
                 // Always save to sessionStorage to keep in sync
                 sessionStorage.setItem('selectedUserId', selectedUserId);
-                console.log('Saved to sessionStorage:', selectedUserId);
                 
                 // If URL doesn't have user_id parameter, add it
                 if (!urlUserId) {
                     const newUrl = new URL(window.location);
                     newUrl.searchParams.set('user_id', selectedUserId);
                     window.history.replaceState({}, '', newUrl);
-                    console.log('Updated URL to:', newUrl.toString());
                 }
-            } else {
-                console.log('No user ID to restore');
             }
-            
-            console.log('=== restoreSelectedUser END ===');
         }
         
         function changeGlobalUser() {
