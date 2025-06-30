@@ -51,37 +51,23 @@
         
         // Load users and initialize global user selection
         async function initializeGlobalUserSelect() {
-            console.log('=== initializeGlobalUserSelect START ===');
-            console.log('Current URL:', window.location.href);
-            console.log('URL search params:', window.location.search);
-            
             try {
-                console.log('Fetching users from /api/users...');
                 const response = await fetch('/api/users');
                 const data = await response.json();
-                console.log('Users API response:', data);
                 
                 if (data.success) {
                     globalUsers = data.users;
-                    console.log('Loaded users:', globalUsers);
                     populateUserSelect();
                     restoreSelectedUser();
-                } else {
-                    console.error('Failed to load users:', data);
                 }
             } catch (error) {
                 console.error('Error loading users:', error);
             }
-            console.log('=== initializeGlobalUserSelect END ===');
         }
         
         function populateUserSelect() {
-            console.log('populateUserSelect called');
             const select = document.getElementById('global-user-select');
-            if (!select) {
-                console.error('global-user-select element not found!');
-                return;
-            }
+            if (!select) return;
             
             // Clear existing options except the first one
             select.innerHTML = '<option value="">Choose a user...</option>';
@@ -92,9 +78,7 @@
                 option.value = user.id;
                 option.textContent = `${user.display_name}${user.testnet ? ' (Testnet)' : ''}`;
                 select.appendChild(option);
-                console.log('Added option:', user.id, user.display_name);
             });
-            console.log('Select options after populate:', select.options.length);
         }
         
         function restoreSelectedUser() {
@@ -102,8 +86,6 @@
             const urlParams = new URLSearchParams(window.location.search);
             const urlUserId = urlParams.get('user_id');
             const savedUserId = sessionStorage.getItem('selectedUserId');
-            
-            console.log('Restoring user - URL param:', urlUserId, 'Session:', savedUserId);
             
             // Prioritize URL parameter over saved session
             const userIdToSelect = urlUserId || savedUserId;
@@ -116,8 +98,6 @@
                     const optionExists = Array.from(select.options).some(opt => opt.value === selectedUserId.toString());
                     if (optionExists) {
                         select.value = selectedUserId;
-                    } else {
-                        console.warn('User ID', selectedUserId, 'not found in select options');
                     }
                 }
                 
@@ -182,17 +162,6 @@
         
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('=== DOMContentLoaded in base.html ===');
-            console.log('Session logged_in:', {{ 'true' if session.get('logged_in') else 'false' }});
-            console.log('Current page:', window.location.pathname);
-            
-            // Check if we're on a page that needs user selection
-            if (typeof updateUIForSelectedUser === 'function') {
-                console.log('updateUIForSelectedUser function found');
-            } else {
-                console.log('updateUIForSelectedUser function NOT found');
-            }
-            
             initializeGlobalUserSelect();
         });
     </script>
