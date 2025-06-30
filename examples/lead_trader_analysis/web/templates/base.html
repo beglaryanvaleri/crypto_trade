@@ -82,25 +82,34 @@
         }
         
         function restoreSelectedUser() {
-            // Try to restore from sessionStorage first, then URL parameter
-            const savedUserId = sessionStorage.getItem('selectedUserId');
+            // Try URL parameter first, then sessionStorage
             const urlParams = new URLSearchParams(window.location.search);
             const urlUserId = urlParams.get('user_id');
+            const savedUserId = sessionStorage.getItem('selectedUserId');
             
-            const userIdToSelect = savedUserId || urlUserId;
+            console.log('Restoring user - URL param:', urlUserId, 'Session:', savedUserId);
+            
+            // Prioritize URL parameter over saved session
+            const userIdToSelect = urlUserId || savedUserId;
             
             if (userIdToSelect) {
                 selectedUserId = parseInt(userIdToSelect);
                 const select = document.getElementById('global-user-select');
                 if (select) {
-                    select.value = selectedUserId;
+                    // Make sure the option exists before setting value
+                    const optionExists = Array.from(select.options).some(opt => opt.value === selectedUserId.toString());
+                    if (optionExists) {
+                        select.value = selectedUserId;
+                    } else {
+                        console.warn('User ID', selectedUserId, 'not found in select options');
+                    }
                 }
                 
-                // Save to sessionStorage
+                // Always save to sessionStorage to keep in sync
                 sessionStorage.setItem('selectedUserId', selectedUserId);
                 
-                // Update URL if needed (without page reload)
-                if (!urlUserId || urlUserId !== selectedUserId.toString()) {
+                // If URL doesn't have user_id parameter, add it
+                if (!urlUserId) {
                     const newUrl = new URL(window.location);
                     newUrl.searchParams.set('user_id', selectedUserId);
                     window.history.replaceState({}, '', newUrl);
