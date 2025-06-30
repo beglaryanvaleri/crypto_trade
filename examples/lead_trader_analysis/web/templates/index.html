@@ -796,10 +796,13 @@ function refreshTraderPositions(traderId) {
 }
 
 function updateUIForSelectedUser() {
+    console.log('=== updateUIForSelectedUser called ===');
     const userId = getSelectedUserId();
     const user = getSelectedUser();
+    console.log('User ID:', userId, 'User object:', user);
     
     if (userId && user) {
+        console.log('Showing user sections...');
         // Show user-specific sections
         document.getElementById('user-dashboard').style.display = 'block';
         document.getElementById('lead-traders-link').style.display = 'block';
@@ -834,9 +837,28 @@ function updateUIForSelectedUser() {
 
 // Auto-load data if user is selected
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DOMContentLoaded in index.html ===');
+    console.log('getSelectedUserId function exists:', typeof getSelectedUserId === 'function');
+    
     // Wait a bit for global user selection to initialize
     setTimeout(() => {
+        console.log('After timeout, checking user...');
+        const userId = getSelectedUserId();
+        console.log('Selected user ID from getSelectedUserId():', userId);
+        
         updateUIForSelectedUser();
+        
+        // If still no user, try one more time
+        if (!userId) {
+            setTimeout(() => {
+                console.log('Second attempt to get user ID...');
+                const userId2 = getSelectedUserId();
+                console.log('Second attempt user ID:', userId2);
+                if (userId2) {
+                    updateUIForSelectedUser();
+                }
+            }, 500);
+        }
     }, 300);
 });
 </script>
