@@ -325,11 +325,11 @@ function loadLeadTradersOverview() {
                                                    onchange="updatePositionCoeff(${pos.id}, this.value)">
                                         </td>
                                         <td>
-                                            <span class="text-info"><strong>${pos.copy_balance_size.toFixed(5)}</strong></span>
+                                            <span class="text-info"><strong>${parseFloat(pos.copy_balance_size.toFixed(5))}</strong></span>
                                         </td>
                                         <td>
                                             <span class="badge bg-${pos.calculated_side === 'BUY' ? 'success' : 'danger'}">${pos.calculated_side}</span>
-                                            <strong>${pos.calculated_size.toFixed(6)}</strong>
+                                            <strong>${parseFloat(pos.calculated_size.toFixed(5))}</strong>
                                         </td>
                                         <td>
                                             <button class="btn btn-sm btn-outline-danger" onclick="removePosition(${pos.id})" title="Remove">
@@ -707,17 +707,17 @@ function loadSummaryTable() {
                                 <td><strong>${item.symbol}</strong></td>
                                 <td>
                                     <span class="badge bg-${item.calculated_side === 'BUY' ? 'success' : 'danger'}">${item.calculated_side}</span>
-                                    <strong>${item.calculated_size.toFixed(3)}</strong>
+                                    <strong>${parseFloat(item.calculated_size.toFixed(5))}</strong>
                                 </td>
                                 <td>
                                     ${item.actual_size > 0 ? 
-                                        `<span class="badge bg-${item.actual_side === 'BUY' ? 'success' : 'danger'}">${item.actual_side}</span> <strong>${item.actual_size.toFixed(3)}</strong>` : 
+                                        `<span class="badge bg-${item.actual_side === 'BUY' ? 'success' : 'danger'}">${item.actual_side}</span> <strong>${parseFloat(item.actual_size.toFixed(5))}</strong>` : 
                                         '<span class="text-muted">None</span>'
                                     }
                                 </td>
                                 <td>
                                     <span class="badge bg-${item.difference_side === 'BUY' ? 'success' : 'danger'}">${item.difference_side}</span>
-                                    <strong>${item.difference_abs.toFixed(3)}</strong>
+                                    <strong>${parseFloat(item.difference_abs.toFixed(5))}</strong>
                                 </td>
                                 <td>
                                     <strong>${item.difference_percent}%</strong>
